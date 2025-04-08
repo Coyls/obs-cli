@@ -32,31 +32,37 @@ Example:
 func executeCopy(source string) error {
 	logger.PrintHeader("Copy file to Obsidian vault")
 
-	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Error("%s", err.Error())
-		return err
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Check if source file exists
 	if _, err := os.Stat(source); os.IsNotExist(err) {
 		logger.Error("Source file not found: %s", source)
 		return fmt.Errorf("source file not found: %s", source)
 	}
 
-	// Use default destination if none specified
+	fmt.Printf("Default Vault: %s\n", cfg.Config.DefaultVault)
+	for key := range cfg.Config.Vaults {
+		fmt.Printf("Vault trouvé: %s\n", key)
+	}
+
+	vaultConfig, exists := cfg.GetVaultConfig(cfg.Config.DefaultVault)
+	if !exists {
+		logger.Error("Default vault configuration not found")
+		return fmt.Errorf("default vault configuration not found")
+	}
+
 	if destination == "" {
-		if cfg.DefaultCpPath == "" {
+		if vaultConfig.Commands.Cp.DefaultTargetPath == "" {
 			logger.Error("No destination specified and no default path configured")
 			return fmt.Errorf("no destination specified and no default path configured")
 		}
-		destination = cfg.DefaultCpPath
+		destination = vaultConfig.Commands.Cp.DefaultTargetPath
 		logger.Info("Using default destination: %s", destination)
 	}
 
-	// Build destination path in the vault
-	destPath := filepath.Join(cfg.VaultPath, destination)
+	destPath := filepath.Join(cfg.Config.Root, vaultConfig.VaultPath, destination)
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		logger.Info("Creating destination directory: %s", destPath)
 		if err := os.MkdirAll(destPath, 0755); err != nil {
@@ -65,17 +71,14 @@ func executeCopy(source string) error {
 		}
 	}
 
-	// Get the filename from source
 	filename := filepath.Base(source)
 	finalDest := filepath.Join(destPath, filename)
 
-	// Check if destination file already exists
 	if _, err := os.Stat(finalDest); err == nil {
 		logger.Error("File already exists in destination: %s", finalDest)
 		return fmt.Errorf("file already exists in destination: %s", finalDest)
 	}
 
-	// Open source file
 	srcFile, err := os.Open(source)
 	if err != nil {
 		logger.Error("Failed to open source file: %s", err.Error())
@@ -83,7 +86,6 @@ func executeCopy(source string) error {
 	}
 	defer srcFile.Close()
 
-	// Create destination file
 	dstFile, err := os.Create(finalDest)
 	if err != nil {
 		logger.Error("Failed to create destination file: %s", err.Error())
@@ -91,7 +93,6 @@ func executeCopy(source string) error {
 	}
 	defer dstFile.Close()
 
-	// Copy the file
 	logger.Info("Copying file from %s to %s...", source, finalDest)
 	if _, err := io.Copy(dstFile, srcFile); err != nil {
 		logger.Error("Failed to copy file: %s", err.Error())
@@ -106,7 +107,6 @@ func init() {
 	cpCmd.Flags().StringVarP(&destination, "destination", "d", "", "Destination directory in the vault (optional)")
 }
 
-// GetCommand returns the cp command for root command integration
 func GetCommand() *cobra.Command {
 	return cpCmd
 }

@@ -1,6 +1,8 @@
 package push
 
 import (
+	"fmt"
+
 	"github.com/coyls/obs-cli/internal/config"
 	"github.com/coyls/obs-cli/internal/git"
 	"github.com/coyls/obs-cli/internal/logger"
@@ -24,17 +26,13 @@ It performs a commit and pushes the changes.`,
 func executePush() error {
 	logger.PrintHeader("Push Obsidian to GitHub")
 
-	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Error("%s", err.Error())
-		return err
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Initialize Git client
-	gitClient := git.New(cfg.VaultPath)
+	gitClient := git.New(cfg.Config.Root)
 
-	// Check for changes
 	logger.Info("Checking for changes...")
 	hasChanges, err := gitClient.HasChanges()
 	if err != nil {

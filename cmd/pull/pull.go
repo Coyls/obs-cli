@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/coyls/obs-cli/internal/config"
@@ -22,17 +23,13 @@ It fetches and applies the latest changes locally.`,
 func executePull() error {
 	logger.PrintHeader("Pull Obsidian from GitHub")
 
-	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Error(err.Error())
-		return err
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Initialize Git client
-	gitClient := git.New(cfg.VaultPath)
+	gitClient := git.New(cfg.Config.Root)
 
-	// Check current branch
 	logger.Info("Checking current branch...")
 	currentBranch, err := gitClient.GetCurrentBranch()
 	if err != nil {
@@ -45,7 +42,6 @@ func executePull() error {
 		return nil
 	}
 
-	// Check remote changes
 	logger.Info("Checking remote changes...")
 	if err := gitClient.Fetch(); err != nil {
 		logger.Error("Error while checking for changes")
@@ -53,15 +49,12 @@ func executePull() error {
 	}
 	logger.Success("Check completed")
 
-	// Pull changes
 	logger.Info("Fetching changes...")
 	if err := gitClient.Pull(); err != nil {
-		// Handle conflicts
 		if strings.Contains(err.Error(), "conflict") {
 			logger.Error("Conflicts detected!")
 			logger.Info("Conflicting files:")
 
-			// List conflicting files
 			conflicts, err := gitClient.GetConflicts()
 			if err != nil {
 				logger.Error("Unable to list conflicts")
@@ -84,7 +77,6 @@ func executePull() error {
 	return nil
 }
 
-// GetCommand returns the pull command for root command integration
 func GetCommand() *cobra.Command {
 	return pullCmd
 }

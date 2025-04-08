@@ -24,6 +24,9 @@ Example:
   obs-cli mv ~/Downloads/image.png -d Assets/new`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return cmd.Help()
+		}
 		return executeMove(args[0])
 	},
 }
@@ -31,31 +34,32 @@ Example:
 func executeMove(source string) error {
 	logger.PrintHeader("Move file to Obsidian vault")
 
-	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.Error("%s", err.Error())
-		return err
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Check if source file exists
 	if _, err := os.Stat(source); os.IsNotExist(err) {
 		logger.Error("Source file not found: %s", source)
 		return fmt.Errorf("source file not found: %s", source)
 	}
 
-	// Use default destination if none specified
+	vaultConfig, exists := cfg.GetVaultConfig(cfg.Config.DefaultVault)
+	if !exists {
+		logger.Error("Default vault configuration not found")
+		return fmt.Errorf("default vault configuration not found")
+	}
+
 	if destination == "" {
-		if cfg.DefaultMvPath == "" {
+		if vaultConfig.Commands.Mv.DefaultTargetPath == "" {
 			logger.Error("No destination specified and no default path configured")
 			return fmt.Errorf("no destination specified and no default path configured")
 		}
-		destination = cfg.DefaultMvPath
+		destination = vaultConfig.Commands.Mv.DefaultTargetPath
 		logger.Info("Using default destination: %s", destination)
 	}
 
-	// Build destination path in the vault
-	destPath := filepath.Join(cfg.VaultPath, destination)
+	destPath := filepath.Join(cfg.Config.Root, vaultConfig.VaultPath, destination)
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		logger.Info("Creating destination directory: %s", destPath)
 		if err := os.MkdirAll(destPath, 0755); err != nil {
@@ -64,17 +68,14 @@ func executeMove(source string) error {
 		}
 	}
 
-	// Get the filename from source
 	filename := filepath.Base(source)
 	finalDest := filepath.Join(destPath, filename)
 
-	// Check if destination file already exists
 	if _, err := os.Stat(finalDest); err == nil {
 		logger.Error("File already exists in destination: %s", finalDest)
 		return fmt.Errorf("file already exists in destination: %s", finalDest)
 	}
 
-	// Move the file
 	logger.Info("Moving file from %s to %s...", source, finalDest)
 	if err := os.Rename(source, finalDest); err != nil {
 		logger.Error("Failed to move file: %s", err.Error())
@@ -89,7 +90,6 @@ func init() {
 	mvCmd.Flags().StringVarP(&destination, "destination", "d", "", "Destination directory in the vault (optional)")
 }
 
-// GetCommand returns the mv command for root command integration
 func GetCommand() *cobra.Command {
 	return mvCmd
 }

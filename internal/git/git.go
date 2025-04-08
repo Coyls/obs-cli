@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+const (
+	DefaultBranch     = "main"
+	DefaultRemote     = "origin"
+	DefaultTimeFormat = "02-01-2006_15:04:05"
+)
+
 type Git struct {
 	repoPath string
 }
@@ -37,7 +43,7 @@ func (g *Git) AddAll() error {
 }
 
 func (g *Git) Commit() error {
-	now := time.Now().Format("02-01-2006_15:04:05")
+	now := time.Now().Format(DefaultTimeFormat)
 	cmd := exec.Command("git", "commit", "--quiet", "-m", now)
 	cmd.Dir = g.repoPath
 	if err := cmd.Run(); err != nil {
@@ -47,7 +53,7 @@ func (g *Git) Commit() error {
 }
 
 func (g *Git) Push() error {
-	cmd := exec.Command("git", "push", "--quiet", "origin", "main")
+	cmd := exec.Command("git", "push", "--quiet", DefaultRemote, DefaultBranch)
 	cmd.Dir = g.repoPath
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error while pushing to GitHub: %w", err)
@@ -55,7 +61,6 @@ func (g *Git) Push() error {
 	return nil
 }
 
-// GetCurrentBranch returns the current branch name
 func (g *Git) GetCurrentBranch() (string, error) {
 	cmd := exec.Command("git", "branch", "--show-current")
 	cmd.Dir = g.repoPath
@@ -66,9 +71,8 @@ func (g *Git) GetCurrentBranch() (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// Fetch retrieves remote changes
 func (g *Git) Fetch() error {
-	cmd := exec.Command("git", "fetch", "origin", "main")
+	cmd := exec.Command("git", "fetch", DefaultRemote, DefaultBranch)
 	cmd.Dir = g.repoPath
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error while fetching: %w", err)
@@ -76,9 +80,8 @@ func (g *Git) Fetch() error {
 	return nil
 }
 
-// Pull retrieves and applies remote changes
 func (g *Git) Pull() error {
-	cmd := exec.Command("git", "pull", "origin", "main")
+	cmd := exec.Command("git", "pull", DefaultRemote, DefaultBranch)
 	cmd.Dir = g.repoPath
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error while pulling: %w", err)
@@ -86,7 +89,6 @@ func (g *Git) Pull() error {
 	return nil
 }
 
-// GetConflicts returns the list of conflicting files
 func (g *Git) GetConflicts() ([]string, error) {
 	cmd := exec.Command("git", "diff", "--name-only", "--diff-filter=U")
 	cmd.Dir = g.repoPath

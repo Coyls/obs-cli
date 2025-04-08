@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCommand returns the callouts command
 func GetCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "callouts",
@@ -24,26 +23,26 @@ This allows you to customize the appearance and behavior of callouts in your vau
 	return cmd
 }
 
-// executeCallouts handles the callouts command execution
 func executeCallouts(cmd *cobra.Command, args []string) error {
-	// Load configuration
-	cfg, err := config.Load()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Build path to callouts file
-	calloutsPath := filepath.Join(cfg.ObsidianPath, "snippets", "snippet.css")
+	vaultConfig, exists := cfg.GetVaultConfig(cfg.Config.DefaultVault)
+	if !exists {
+		logger.Error("Default vault configuration not found")
+		return fmt.Errorf("default vault configuration not found")
+	}
 
-	// Check if callouts file exists
+	calloutsPath := filepath.Join(cfg.Config.Root, vaultConfig.VaultPath, ".obsidian", "snippets", "snippet.css")
+
 	if _, err := os.Stat(calloutsPath); os.IsNotExist(err) {
-		// Create snippets directory if it doesn't exist
 		snippetsDir := filepath.Dir(calloutsPath)
 		if err := os.MkdirAll(snippetsDir, 0755); err != nil {
 			return fmt.Errorf("failed to create snippets directory: %w", err)
 		}
 
-		// Create empty callouts file
 		if err := os.WriteFile(calloutsPath, []byte("/* Add your callout styles here */\n"), 0644); err != nil {
 			return fmt.Errorf("failed to create callouts file: %w", err)
 		}
@@ -51,8 +50,16 @@ func executeCallouts(cmd *cobra.Command, args []string) error {
 		logger.Info("Created new callouts file at: %s", calloutsPath)
 	}
 
-	// Open file in default editor
-	editorCmd := exec.Command(cfg.DefaultEditor, calloutsPath)
+	editor := cfg.Config.DefaultEditor
+	if editor == "" {
+		if envEditor := os.Getenv("EDITOR"); envEditor != "" {
+			editor = envEditor
+		} else {
+			editor = "nano"
+		}
+	}
+
+	editorCmd := exec.Command(editor, calloutsPath)
 	editorCmd.Stdin = os.Stdin
 	editorCmd.Stdout = os.Stdout
 	editorCmd.Stderr = os.Stderr

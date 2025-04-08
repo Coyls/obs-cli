@@ -43,28 +43,34 @@ sudo cp bin/obs-cli-linux-amd64 /usr/local/bin/obs-cli
 
 ## Configuration
 
-1. Initialize the configuration:
+1. Set the environment variable for the configuration file:
 
 ```bash
-obs-cli init
+# Exemple
+export OBS_CLI_CONFIG="/home/user/my-vaults/.obsclirc.yml"
 ```
 
-2. The configuration file will be created at `~/.config/obs-cli/config.yaml`
-
-3. Modify the configuration according to your needs:
+2. Create and modify the configuration file according to your needs:
 
 ```yaml
-vault_path: "/path/to/your/vault"
-default_mv_path: "Archives"
-default_cp_path: "Assets"
-default_editor: "code" # Default editor for editing files (e.g., "code" for VS Code)
+config:
+  default_editor: nano # Default editor for editing files (e.g., "code" for VS Code)
+  default_vault: MyVault # Name of your default vault
+  root: /home/user/my-vaults # Root directory containing your vaults
+  vaults:
+    MyVault: # Vault name (case-insensitive)
+      vault_path: /MyVault # Path to the vault relative to root
+      commands:
+        cp:
+          default_target_path: /assets/new # Default destination for copy command
+        mv:
+          default_target_path: /assets/new # Default destination for move command
 ```
 
 ## Usage
 
 ### Available Commands
 
-- `obs-cli init` : Initialize or update the configuration
 - `obs-cli mv [file]` : Move a file to the vault
 - `obs-cli cp [file]` : Copy a file to the vault
 - `obs-cli push` : Push changes to GitHub
