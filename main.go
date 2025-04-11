@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/coyls/obs-cli/cmd/archive"
 	"github.com/coyls/obs-cli/cmd/callouts"
 	"github.com/coyls/obs-cli/cmd/cp"
 	"github.com/coyls/obs-cli/cmd/mv"
@@ -30,6 +31,7 @@ func main() {
 	rootCmd.AddCommand(mv.GetCommand())
 	rootCmd.AddCommand(cp.GetCommand())
 	rootCmd.AddCommand(callouts.GetCommand())
+	rootCmd.AddCommand(archive.GetCommand())
 
 	Execute()
 }

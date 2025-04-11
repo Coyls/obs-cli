@@ -26,6 +26,10 @@ type Config struct {
 		DefaultVault  string                  `mapstructure:"default_vault"`
 		Root          string                  `mapstructure:"root"`
 		Vaults        map[string]*VaultConfig `mapstructure:"vaults"`
+		Archive       struct {
+			UsbPath     string `mapstructure:"usb_path"`
+			ExtractPath string `mapstructure:"extract_path"`
+		} `mapstructure:"archive"`
 	} `mapstructure:"config"`
 }
 
@@ -58,13 +62,15 @@ func LoadConfig() (*Config, error) {
 }
 
 func (c *Config) Validate() error {
+	// debugConfig(c)
+
 	if c.Config.Root == "" {
 		return fmt.Errorf("vault root path is required")
 	}
 	if c.Config.DefaultVault == "" {
 		return fmt.Errorf("default vault name is required")
 	}
-	if _, ok := c.Config.Vaults[c.Config.DefaultVault]; !ok {
+	if _, exists := c.GetVaultConfig(c.Config.DefaultVault); !exists {
 		return fmt.Errorf("configuration for default vault '%s' not found", c.Config.DefaultVault)
 	}
 	return nil
@@ -86,3 +92,11 @@ func (c *Config) GetVaultConfig(vaultName string) (*VaultConfig, bool) {
 	}
 	return nil, false
 }
+
+// func debugConfig(cfg *Config) {
+// 	vaultConfig, exists := cfg.GetVaultConfig("Coyls")
+// 	fmt.Printf("Config for 'Coyls': %+v (exists: %v)\n", vaultConfig, exists)
+
+// 	vaultConfig, exists = cfg.GetVaultConfig(cfg.Config.DefaultVault)
+// 	fmt.Printf("Config for default vault '%s': %+v (exists: %v)\n", cfg.Config.DefaultVault, vaultConfig, exists)
+// }

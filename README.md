@@ -1,6 +1,6 @@
 # obs-cli
 
-A command-line tool to manage your Obsidian vault.
+A command-line tool to manage my Obsidian vaults.
 
 ## Installation
 
@@ -36,9 +36,6 @@ Binaries will be generated in the `bin/` directory:
 ```bash
 # For Linux/macOS
 sudo cp bin/obs-cli-linux-amd64 /usr/local/bin/obs-cli
-
-# For Windows
-# Copy obs-cli-windows-amd64.exe to a directory in your PATH
 ```
 
 ## Configuration
@@ -46,7 +43,7 @@ sudo cp bin/obs-cli-linux-amd64 /usr/local/bin/obs-cli
 1. Set the environment variable for the configuration file:
 
 ```bash
-# Exemple
+# Example
 export OBS_CLI_CONFIG="/home/user/my-vaults/.obsclirc.yml"
 ```
 
@@ -65,6 +62,9 @@ config:
           default_target_path: /assets/new # Default destination for copy command
         mv:
           default_target_path: /assets/new # Default destination for move command
+  archive:
+    usb_path: /path/to/usb # Path to USB drive for archiving
+    extract_path: /path/to/extract # Path where to extract archived files
 ```
 
 ## Usage
@@ -76,6 +76,7 @@ config:
 - `obs-cli push` : Push changes to GitHub
 - `obs-cli pull` : Pull changes from GitHub
 - `obs-cli callouts` : Edit Obsidian callouts configuration
+- `obs-cli archive` : Archive files in the vault
 
 ### Examples
 
@@ -91,6 +92,9 @@ obs-cli mv ~/Documents/document.pdf
 
 # Edit Obsidian callouts
 obs-cli callouts
+
+# Archive files
+obs-cli archive
 ```
 
 ## License
